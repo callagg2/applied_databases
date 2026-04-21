@@ -1,3 +1,6 @@
+import menuDB
+from datetime import datetime, date # https://stackoverflow.com/questions/9504356/convert-string-into-date-type-on-python
+
 # Main function
 
 def main():
@@ -54,6 +57,8 @@ def main():
 			attendee_id = int(input("Enter Attendee's ID number: "))
 			attendee_name = (input("Enter Attendee's name: "))
 			attendee_DOB = (input("Enter Attendee's date of birth (yyyy-mm-dd): "))
+			attendee_DOB = datetime.strptime(attendee_DOB, '%Y-%m-%d').date()
+			print(f"{(attendee_DOB)} is of type {type(attendee_DOB)}")
 			attendee_gender = (input("Enter Attendee's gender: "))
 			attendee_company_ID = int(input("Enter Attendee's Company ID number: "))
 			print(f"\nAdd New Attendee")
@@ -64,7 +69,8 @@ def main():
 			print(f"Attendee Gender: {attendee_gender}")
 			print(f"Company ID: {attendee_company_ID}")
 			print(f"\nAttendee successfully added")
-            #print("in 3")
+			attendees = menuDB.populate_data(attendee_id, attendee_name, attendee_DOB, attendee_gender, attendee_company_ID)
+			print(attendees)
 			#find_gt_in_array(array)
 			display_menu()
 		elif (choice == "x"):
