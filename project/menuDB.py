@@ -18,20 +18,36 @@ def find_speaker(namestr):
     values = ({namestr})
     
     with conn:
-        cursor = conn.cursor()
-        cursor.execute(query1,values)
-        speakers = cursor.fetchall()
-        return speakers       
-        cursor.close()  # closes the cursor
-        #conn.close() # closes the connection
+        try:
+            cursor = conn.cursor()
+            cursor.execute(query1,values)
+            speakers = cursor.fetchall()
+            return speakers
+        except pymysql.err. InternalError as e:
+            print("Speaker: {namestr} doesn't exist")       
+    cursor.close()  # closes the cursor
+    conn.close() # closes the connection
         
+def find_company(company_id):
+    if (not conn):
+        connect()
+    
+    query4 = "SELECT companyName FROM company where companyID = %s"
+    values = company_id
+    
+    with conn:
+        cursor = conn.cursor()
+        cursor.execute(query4,values)
+        valid_company = cursor.fetchone()
+        return valid_company
 
 
 def view_attendees(company_id):
     if (not conn):
         connect()
     
-    query2 = "SELECT companyID from company WHERE companyID = %s;"
+    # using nested joins to get the attendees of a company and the sessions they are registered for, along with the room and company name, source https://www.navicat.com/en/company/aboutus/blog/1948-nested-joins-explained
+    query2 ="SELECT a.attendeeName, a.attendeeDOB, s.sessionTitle, s.speakerName, s.sessionDate, r.roomName, c.companyName from company c INNER JOIN(attendee a INNER JOIN (registration reg INNER JOIN (room r INNER JOIN session s on r.roomID = s.roomID) on s.sessionID = reg.sessionID) on a.attendeeID = reg.attendeeID) on a.attendeeCompanyID = c.companyID where companyID = %s order by attendeeName;"
     values = company_id
     #print(query2)
     
@@ -51,20 +67,12 @@ def view_attendees(company_id):
 
 
 
-
-
-
-
-
-
-
-
 def populate_data(attendee_id, attendee_name, attendee_DOB, attendee_gender, attendee_company_ID):
     if (not conn):
         connect();
     query3 = "INSERT into attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID) VALUES (%s, %s, %s, %s, %s)"
     #query3 = "INSERT into attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID) VALUES (attendee_id, {attendee_name}, {attendee_DOB}, {attendee_gender}, attendee_company_ID)"
-    values = (({attendee_id}), ({attendee_name}), ({attendee_DOB}), ({attendee_DOB}), ({attendee_company_ID}))
+    values = (({attendee_id}), ({attendee_name}), ({attendee_DOB}), ({attendee_gender}), ({attendee_company_ID}))
     #print(query)
     
     with conn:
@@ -83,10 +91,3 @@ def populate_data(attendee_id, attendee_name, attendee_DOB, attendee_gender, att
     
     #cursor.close()  # closes the cursor
     #conn.close() # closes the connection
-    
-        
-
-        
-       
- 
-    
