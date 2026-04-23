@@ -1,5 +1,6 @@
 import menuDB
 from datetime import datetime, date  # https://stackoverflow.com/questions/9504356/convert-string-into-date-type-on-python
+driver = None
 
 # Main function
 
@@ -12,7 +13,7 @@ def main():
 	while True:
 		choice = input("Choice: ")
 
-		if choice == "1": # return the speakers and sessions for a given speaker name, ordered by session date
+		if (choice == "1"): # return the speakers and sessions for a given speaker name, ordered by session date
 			speaker_name = input("\nEnter speaker name: ")
 			
 			possible_speakers = menuDB.find_speaker(speaker_name)
@@ -28,7 +29,7 @@ def main():
 			display_menu()
 			
 
-		elif choice == "2": # return the attendees for a company, ordered by attendee name, and include the session details for each attendee
+		elif (choice == "2"): # return the attendees for a company, ordered by attendee name, and include the session details for each attendee
 			valid_company_id = False
 			while valid_company_id == False:
 					try:
@@ -73,7 +74,7 @@ def main():
 			break
 			
 
-		elif choice == "3": # add a new attendee to the database, and return the details of the new attendee
+		elif (choice == "3"): # add a new attendee to the database, and return the details of the new attendee
 			while True:
 					attendee_id = int(input("Enter Attendee's ID number: "))
 					attendee_name = input("Enter Attendee's name: ")
@@ -122,10 +123,39 @@ def main():
 						attendees = menuDB.show_data()
 					except Exception as e:
 						print("error",e)
-					display_menu()		
-	
+					display_menu()	
 
-		elif choice == "x":
+		elif (choice == "4"): # return the attendees that are connected to a given attendee, ordered by attendee name
+			attendee_id = input("Enter AttendeeID: ")
+			connections = menuDB.get_associated_attendees(attendee_id)
+			for connection in connections:
+				print(connection["attendeeID"], connection["attendeeName"])
+
+		elif (choice == "5"): # add a connection between two attendees, and return the details of the attendees that are now connected
+			attendee_id = input("Enter AttendeeID: ")
+			connected_attendee_id = input("Enter Connected AttendeeID: ")
+			menuDB.add_connection(attendee_id, connected_attendee_id)
+			connections = menuDB.get_associated_attendees(attendee_id)
+			print(f"\nAttendees connected to Attendee ID {attendee_id}")
+			print(f"------------------")
+			for connection in connections:
+				print(connection["attendeeID"], connection["attendeeName"])	
+
+
+
+
+
+
+
+		elif (choice == "6"):
+				rooms = menuDB.view_rooms()
+				print(f"\nRooms")
+				print(f"------------------")
+				print(f"Room ID |    Room Name    | Capacity")
+				for room in rooms:
+					print(f"{room['roomID']}  | {room['roomName']} |  {room['capacity']}")
+
+		elif (choice == "x"):
 			break
 		else:
 			print("in else")
@@ -141,6 +171,8 @@ def validate_company_id(company_id):
 	elif company_id <= 0 or company_id > highest_company_id:
 		valid_company_id = False
 		return valid_company_id
+
+
 
 
 def display_menu():
