@@ -126,27 +126,40 @@ def main():
 					display_menu()	
 
 		elif (choice == "4"): # return the attendees that are connected to a given attendee, ordered by attendee name
-			attendee_id = input("Enter AttendeeID: ")
-			connections = menuDB.get_associated_attendees(attendee_id)
-			for connection in connections:
-				print(connection["attendeeID"], connection["attendeeName"])
+			attendee_id = int(input("Enter AttendeeID: "))
+			try:
+				chosen_attendee_name = menuDB.get_names_of_attendees([attendee_id])
+				print(f"\nAttendee Name: {chosen_attendee_name[0]['attendeeName']}")
+				print(f"------------------")
+				connections = menuDB.get_associated_attendees(attendee_id)
+				if connections == []:
+					print(f"No connections")	
+				else:
+					print(f"These attendees are connected:")
+					connections_names = menuDB.get_names_of_attendees(connections)
+					for connection in connections_names:
+						print(connection["attendeeID"], connection["attendeeName"])
+			except Exception as e:
+				print("***ERROR***", "Attendee does not exist",e)
 
 		elif (choice == "5"): # add a connection between two attendees, and return the details of the attendees that are now connected
-			attendee_id = input("Enter AttendeeID: ")
-			connected_attendee_id = input("Enter Connected AttendeeID: ")
-			menuDB.add_connection(attendee_id, connected_attendee_id)
-			connections = menuDB.get_associated_attendees(attendee_id)
-			print(f"\nAttendees connected to Attendee ID {attendee_id}")
-			print(f"------------------")
-			for connection in connections:
-				print(connection["attendeeID"], connection["attendeeName"])	
+			attendee_id_1 = int(input("Enter First AttendeeID: "))
+			attendee_id_2 = int(input("Enter Second AttendeeID: "))
 
+			attendee1_preexist = menuDB.attendee_preexist_check(attendee_id_1)
+			attendee2_preexist = menuDB.attendee_preexist_check(attendee_id_2)
 
+			if attendee1_preexist == None or attendee2_preexist == None:
+				print("***ERROR*** One or both of the Attendee IDs entered do not exist. Please enter valid Attendee IDs.")
+			else:
+				get_associated_attendee1 = menuDB.get_associated_attendees(attendee_id_1)
+				get_associated_attendee2 = menuDB.get_associated_attendees(attendee_id_2)
 
+				if get_associated_attendee1 == None and get_associated_attendee2 == None:
+					menuDB.add_connection(attendee_id_1, attendee_id_2)
+					#print(f"Attendee {attendee_id_1} is now connected to {attendee_id_2}")
 
-
-
-
+			
 		elif (choice == "6"):
 				rooms = menuDB.view_rooms()
 				print(f"\nRooms")

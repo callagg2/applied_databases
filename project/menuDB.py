@@ -2,6 +2,8 @@ import mysql
 import pymysql
 from requests import session
 from neo4j import GraphDatabase
+from neo4j import exceptions
+
 
 conn = None
 
@@ -93,33 +95,64 @@ def get_associated_attendees(tx, attendee_id):
         connected_attendees.append(result["b.AttendeeID"])        
     return connected_attendees
 
-def get_names_of_connected_attendees(connected_attendees):
+def get_names_of_attendees(attendees_ids):
     if (not conn):
         connect_mysql()
     
-    # using nested joins to get the attendees of a company and the sessions they are registered for, along with the room and company name, source https://www.navicat.com/en/company/aboutus/blog/1948-nested-joins-explained
-    query5 =" select attendeeID, attendeeName from attendee where attendeeID IN $connected_attendees;"
-    values = connected_attendees
+    query5 =" select attendeeID, attendeeName from attendee where attendeeID IN $attendees_ids;"
+    values = attendees_ids
     #print(query5)
     
     with conn:
         try:
             cursor = conn.cursor()
             cursor.execute(query5, values)
-            connections = cursor.fetchall()
-            return connections
+            names_of_attendees = cursor.fetchall()
+            return names_of_attendees
                 
-        except pymysql.err. InternalError as e:
+        except pymysql.err.InternalError as e:
             print("Company ID: {company_id} doesn't exist")
+
+def attendee_preexist_check(attendee_id):
+    if (not conn):
+        connect_mysql()
     
-    #cursor.close()  # closes the cursor
-    #conn.close() # closes the connection
+    query6 = "SELECT attendeeID FROM attendee where attendeeID = %s"
+    values = attendee_id
+    
+    with conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(query6, values)
+            preexist_attendee = cursor.fetchone()
+            return preexist_attendee
+        except pymysql.err. InternalError as e:
+            print("Attendee ID: {attendee_id} doesn't exist")
+
+           
+
+def add_connection(tx, attendee_id_1, attendee_id_2):
+    if (not conn):
+        connect_neo4j()
+
+    with driver.session(database="appdbprojNeo4j") as session:
+        try:
+            connection = session.execute_write(add_new_connection, attendee_id_1, attendee_id_2) # https://neo4j.com/docs/api/python-driver/current/api.html#neo4j.Session.execute_write
+            print(f"Attendees {attendee_id_1} is not connected to {attendee_id_2}")
+        except exceptions.ClientError as e:
+            print("***ERROR*** Attendees {attendee_id_1} and {attendee_id_2} are already connected", e)
+
+def add_new_connection(tx, attendee_id_1, attendee_id_2):
+    query = "MATCH (a:Attendee {AttendeeID: $attendee_id_1}), (b:Attendee {AttendeeID: $attendee_id_2}) CREATE (a)-[:CONNECTED_TO]->(b)"  
+    tx.run(query, attendee_id_1=attendee_id_1, attendee_id_2=attendee_id_2)
+
 
 def populate_data(attendee_id, attendee_name, attendee_DOB, attendee_gender, attendee_company_ID):
     if (not conn):
         connect_mysql();
     query3 = "INSERT into attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID) VALUES (%s, %s, %s, %s, %s)"
-    #query3 = "INSERT into attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID) VALUES (attendee_id, {attendee_name}, {attendee_DOB}, {attendee_gender}, attendee_company_ID)"
+    #query3 = """INSERT into attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID) 
+                # VALUES (attendee_id, {attendee_name}, {attendee_DOB}, {attendee_gender}, attendee_company_ID)"""
     values = (({attendee_id}), ({attendee_name}), ({attendee_DOB}), ({attendee_gender}), ({attendee_company_ID}))
     #print(query)
     
@@ -154,7 +187,6 @@ def view_rooms():
         except pymysql.err. InternalError as e:
             print("Internal Error")
     
-    #cursor.close()  # closes the cursor
-    #conn.close() # closes the connection
+
 
 
